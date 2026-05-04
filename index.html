@@ -20,10 +20,12 @@
       --surface-2:   #1C1C1C;
       --gold:        #C8A84B;
       --gold-dark:   #8A7230;
-      --gold-subtle: rgba(200, 168, 75, 0.10);
+      --gold-subtle: rgba(200, 168, 75, 0.09);
+      --gold-border: rgba(200, 168, 75, 0.22);
       --text:        #EDE9DF;
       --text-muted:  #6B6860;
       --border:      #222220;
+      --divider:     #2C2C2A;
     }
 
     html, body {
@@ -45,23 +47,21 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 24px;
-      height: 56px;
+      padding: 0 22px;
+      height: 50px;
       border-bottom: 1px solid var(--border);
       flex-shrink: 0;
     }
 
     .logo {
       font-family: 'Cormorant Garamond', serif;
-      font-size: 26px;
+      font-size: 24px;
       font-weight: 300;
       letter-spacing: 0.18em;
       color: var(--gold);
     }
 
-    .logo span {
-      font-style: italic;
-    }
+    .logo span { font-style: italic; }
 
     .header-tag {
       font-size: 10px;
@@ -71,21 +71,22 @@
       color: var(--text-muted);
     }
 
-    /* ── Main two-panel grid ── */
+    /* ── Main: flex column, chat grows / input is fixed ── */
     .main {
       flex: 1;
-      display: grid;
-      grid-template-rows: 1fr 1fr;
+      display: flex;
+      flex-direction: column;
       overflow: hidden;
     }
 
     /* ── Chat panel ── */
     .chat-panel {
+      flex: 1;
       overflow-y: auto;
-      padding: 20px 20px 16px;
+      padding: 16px 20px 14px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 12px;
       scrollbar-width: none;
     }
 
@@ -97,22 +98,20 @@
       letter-spacing: 0.18em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
 
     .message {
       display: flex;
       align-items: flex-end;
-      gap: 10px;
+      gap: 9px;
     }
 
-    .message.out {
-      flex-direction: row-reverse;
-    }
+    .message.out { flex-direction: row-reverse; }
 
     .avatar {
-      width: 30px;
-      height: 30px;
+      width: 28px;
+      height: 28px;
       border-radius: 50%;
       border: 1px solid var(--border);
       background: var(--surface-2);
@@ -121,56 +120,43 @@
       justify-content: center;
       flex-shrink: 0;
       font-family: 'Cormorant Garamond', serif;
-      font-size: 11px;
+      font-size: 10px;
       color: var(--gold);
-      letter-spacing: 0.05em;
     }
 
     .bubble-col {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
       max-width: 72%;
     }
 
-    .message.out .bubble-col {
-      align-items: flex-end;
-    }
+    .message.out .bubble-col { align-items: flex-end; }
 
     .bubble {
-      padding: 10px 14px;
+      padding: 9px 13px;
       font-size: 14px;
-      line-height: 1.65;
+      line-height: 1.6;
     }
 
     .message.in .bubble {
       background: var(--surface-2);
-      border-radius: 4px 16px 16px 16px;
+      border-radius: 4px 14px 14px 14px;
       color: var(--text);
     }
 
     .message.out .bubble {
       background: var(--gold);
       color: #0C0C0C;
-      border-radius: 16px 4px 16px 16px;
+      border-radius: 14px 4px 14px 14px;
       font-weight: 500;
     }
 
     .bubble.translation {
       background: var(--gold-subtle);
-      border: 1px solid rgba(200, 168, 75, 0.25);
-      border-radius: 4px 16px 16px 16px;
-      padding: 12px 16px;
-    }
-
-    .bubble .en-result {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 20px;
-      font-style: italic;
-      font-weight: 400;
-      color: var(--gold);
-      letter-spacing: 0.02em;
-      line-height: 1.4;
+      border: 1px solid var(--gold-border);
+      border-radius: 4px 14px 14px 14px;
+      padding: 10px 14px;
     }
 
     .bubble .en-label {
@@ -178,7 +164,14 @@
       letter-spacing: 0.15em;
       text-transform: uppercase;
       color: var(--text-muted);
-      margin-bottom: 5px;
+      margin-bottom: 4px;
+    }
+
+    .bubble .en-result {
+      font-family: 'Inter Tight', sans-serif;
+      font-size: 19px;
+      color: var(--gold);
+      line-height: 1.4;
     }
 
     .ts {
@@ -187,13 +180,16 @@
       padding: 0 2px;
     }
 
-    /* ── Input panel ── */
+    /* ── Divider between chat and input ── */
     .input-panel {
-      border-top: 1px solid var(--border);
-      padding: 20px 20px 24px;
+      flex-shrink: 0;
+      border-top: 1px solid var(--divider);
+      /* shadow creates depth: input floats above chat */
+      box-shadow: 0 -14px 28px rgba(0, 0, 0, 0.55);
+      padding: 14px 20px 20px;
       display: flex;
       flex-direction: column;
-      gap: 14px;
+      gap: 10px;
       background: var(--bg);
     }
 
@@ -206,7 +202,7 @@
 
     .input-row {
       display: flex;
-      gap: 10px;
+      gap: 9px;
       align-items: flex-end;
     }
 
@@ -214,35 +210,30 @@
       flex: 1;
       background: var(--surface);
       border: 1px solid var(--border);
-      border-radius: 12px;
+      border-radius: 11px;
       color: var(--text);
       font-family: 'Inter Tight', sans-serif;
       font-size: 15px;
       line-height: 1.6;
-      padding: 12px 16px;
+      padding: 10px 14px;
       resize: none;
-      height: 50px;
-      max-height: 110px;
+      height: 46px;
+      max-height: 100px;
       outline: none;
       transition: border-color 0.2s;
     }
 
-    textarea::placeholder {
-      color: var(--text-muted);
-    }
-
-    textarea:focus {
-      border-color: var(--gold-dark);
-    }
+    textarea::placeholder { color: var(--text-muted); }
+    textarea:focus { border-color: var(--gold-dark); }
 
     .btn {
       flex-shrink: 0;
-      height: 50px;
-      padding: 0 22px;
+      height: 46px;
+      padding: 0 20px;
       background: var(--gold);
       color: #0C0C0C;
       border: none;
-      border-radius: 12px;
+      border-radius: 11px;
       font-family: 'Inter Tight', sans-serif;
       font-size: 13px;
       font-weight: 600;
@@ -255,40 +246,33 @@
     .btn:hover  { opacity: 0.82; }
     .btn:active { opacity: 0.65; }
 
-    /* ── Result area ── */
+    /* ── Result area: content-sized, visually matches chat bubbles ── */
     .result-area {
-      flex: 1;
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 14px 18px;
+      background: var(--gold-subtle);
+      border: 1px solid var(--gold-border);
+      border-radius: 11px;
+      padding: 10px 16px;
+      min-height: 44px;
       display: flex;
       align-items: center;
-      min-height: 0;
-      position: relative;
-      overflow: hidden;
     }
 
     .result-placeholder {
       font-size: 13px;
       color: var(--text-muted);
-      letter-spacing: 0.02em;
     }
 
     .result-en {
-      font-family: 'Cormorant Garamond', serif;
-      font-size: 24px;
-      font-style: italic;
-      font-weight: 400;
+      font-family: 'Inter Tight', sans-serif;
+      font-size: 22px;
       color: var(--gold);
-      letter-spacing: 0.02em;
       line-height: 1.35;
       display: none;
-      animation: fadeUp 0.35s ease both;
+      animation: fadeUp 0.3s ease both;
     }
 
     @keyframes fadeUp {
-      from { opacity: 0; transform: translateY(8px); }
+      from { opacity: 0; transform: translateY(6px); }
       to   { opacity: 1; transform: translateY(0); }
     }
   </style>
@@ -302,22 +286,18 @@
 
   <div class="main">
 
-    <!-- ── Chat panel ── -->
-    <div class="chat-panel" id="chatPanel">
+    <!-- ── Chat panel (grows to fill space) ── -->
+    <div class="chat-panel">
       <div class="chat-date">Today</div>
 
-      <!-- Incoming: prompt -->
       <div class="message in">
         <div class="avatar">AI</div>
         <div class="bubble-col">
-          <div class="bubble">
-            今日の気持ちを、英語で伝えてみましょう。<br>どんな一日でしたか？
-          </div>
+          <div class="bubble">今日の気持ちを、英語で伝えてみましょう。<br>どんな一日でしたか？</div>
           <div class="ts">09:12</div>
         </div>
       </div>
 
-      <!-- Outgoing: user's Japanese -->
       <div class="message out">
         <div class="bubble-col">
           <div class="bubble">今日は本当に疲れた…</div>
@@ -325,7 +305,6 @@
         </div>
       </div>
 
-      <!-- Incoming: translation result -->
       <div class="message in">
         <div class="avatar">AI</div>
         <div class="bubble-col">
@@ -338,51 +317,68 @@
       </div>
     </div>
 
-    <!-- ── Input panel ── -->
+    <!-- ── Input panel (fixed height, content-sized) ── -->
     <div class="input-panel">
       <div class="panel-label">今日の一言</div>
       <div class="input-row">
         <textarea id="jpInput" placeholder="日本語で入力…" rows="1"></textarea>
-        <button class="btn" onclick="translate()">英訳する</button>
+        <button class="btn" onclick="translateText()">英訳する</button>
       </div>
       <div class="result-area">
         <div class="result-placeholder" id="placeholder">英訳結果がここに表示されます</div>
-        <div class="result-en"         id="resultEn"></div>
+        <div class="result-en" id="resultEn"></div>
       </div>
     </div>
 
   </div>
 
   <script>
-    function translate() {
+    async function translateText() {
       const input = document.getElementById('jpInput').value.trim();
       if (!input) return;
 
       const placeholder = document.getElementById('placeholder');
       const resultEn    = document.getElementById('resultEn');
 
-      // Stub — replace with AI call later
-      const translation = '"I\'m exhausted today."';
-
-      placeholder.style.display = 'none';
+      placeholder.textContent   = '翻訳中…';
+      placeholder.style.display = 'block';
       resultEn.style.display    = 'none';
-      void resultEn.offsetWidth; // reset animation
-      resultEn.textContent      = translation;
-      resultEn.style.display    = 'block';
+
+      try {
+        const res = await fetch('/api/translate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: input }),
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) {
+          placeholder.textContent = data.error || '翻訳に失敗しました。';
+          return;
+        }
+
+        placeholder.style.display = 'none';
+        resultEn.style.display    = 'none';
+        void resultEn.offsetWidth;
+        resultEn.textContent      = `"${data.translation}"`;
+        resultEn.style.display    = 'block';
+      } catch (_) {
+        placeholder.textContent = 'ネットワークエラーが発生しました。';
+      }
     }
 
-    // Auto-resize textarea
     const ta = document.getElementById('jpInput');
+
     ta.addEventListener('input', () => {
       ta.style.height = 'auto';
-      ta.style.height = Math.min(ta.scrollHeight, 110) + 'px';
+      ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';
     });
 
-    // Enter to translate (Shift+Enter = newline)
     ta.addEventListener('keydown', e => {
       if (e.key === 'Enter' && !e.shiftKey) {
         e.preventDefault();
-        translate();
+        translateText();
       }
     });
   </script>
