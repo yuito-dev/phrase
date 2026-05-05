@@ -9,9 +9,10 @@ Claude Codeに書かせたコードを「自分で説明できる」レベルま
 
 1. [プロジェクト全体の構造](#1-プロジェクト全体の構造)
 2. [server.js 解説](#2-serverjs-解説)
-3. [重要な概念まとめ](#3-重要な概念まとめ)
-4. [理解度チェック（自分用クイズ）](#4-理解度チェック自分用クイズ)
-5. [今後追加予定](#5-今後追加予定)
+3. [index.html JavaScript部分の解説](#3-indexhtml-javascript部分の解説)
+4. [重要な概念まとめ](#4-重要な概念まとめ)
+5. [理解度チェック（自分用クイズ）](#5-理解度チェック自分用クイズ)
+6. [今後追加予定](#6-今後追加予定)
 
 ---
 
@@ -58,6 +59,33 @@ Claude Codeに書かせたコードを「自分で説明できる」レベルま
 | **package.json** | 必要な道具一覧 | 食材リスト |
 | **node_modules/** | 実際の道具一式 | 食材庫 |
 | **.gitignore** | 持ち出し禁止リスト | GitHubに上げないもの |
+
+### 言語の使い分け
+
+index.html 1ファイルの中に3つの言語が入ってる：
+
+| 言語 | 役割 | 例 |
+|---|---|---|
+| **HTML** | 画面の骨組み・構造 | 「ここに入力欄、ここにボタン」 |
+| **CSS** | 画面の見た目・装飾 | 「色は金色、ボタンは丸く」 |
+| **JavaScript** | 画面の動き・処理 | 「ボタン押したらAPIに送信」 |
+
+```html
+<html>
+  <head>
+    <style>
+      ← ここがCSS（見た目）
+    </style>
+  </head>
+  <body>
+    ← ここがHTML（骨組み）
+    
+    <script>
+      ← ここがJavaScript（動き）
+    </script>
+  </body>
+</html>
+```
 
 ---
 
@@ -376,7 +404,343 @@ console.log(`Server running → http://localhost:${PORT}`);
 
 ---
 
-## 3. 重要な概念まとめ
+## 3. index.html JavaScript部分の解説
+
+### 全体像
+
+このJSがやってること：
+
+```
+1. 関数 translateText() の定義
+   ├─ 入力欄から日本語取得
+   ├─ サーバーに送信（fetchでPOST）
+   ├─ 結果を画面に表示
+   └─ エラー時はエラーメッセージ表示
+
+2. テキスト入力欄の自動リサイズ
+3. Enterキーで送信できるショートカット
+```
+
+---
+
+### ブロック1：translateText関数の前半（入力取得 & UI準備）
+
+```javascript
+async function translateText() {
+  const input = document.getElementById('jpInput').value.trim();
+  if (!input) return;
+
+  const placeholder = document.getElementById('placeholder');
+  const resultEn    = document.getElementById('resultEn');
+
+  placeholder.textContent   = '翻訳中…';
+  placeholder.style.display = 'block';
+  resultEn.style.display    = 'none';
+```
+
+#### `async function translateText() {`
+
+- **`async`**：「この関数の中で `await` を使うよ」宣言
+- **`function translateText()`**：`translateText` という名前の関数を定義
+
+#### `const input = document.getElementById('jpInput').value.trim();`
+
+3つの処理が連続してる。分解すると：
+
+```javascript
+const element = document.getElementById('jpInput');  // 1. HTML要素取得
+const value = element.value;                          // 2. 入力値取得
+const input = value.trim();                           // 3. 前後の空白削除
+```
+
+- **`document.getElementById('jpInput')`**：HTMLの中から `id="jpInput"` の要素（入力欄）を取得
+- **`.value`**：入力欄の中身を取り出す
+- **`.trim()`**：文字列の前後の空白を削除
+
+例：`"  今日は疲れた  "` → `"今日は疲れた"`
+
+#### `if (!input) return;`
+
+入力が空っぽなら関数終了。
+server.js側でも検証してるが、**両方でチェック**するのがプロの作法（多重防御）。
+
+#### 画面要素の取得
+
+```javascript
+const placeholder = document.getElementById('placeholder');
+const resultEn    = document.getElementById('resultEn');
+```
+
+| 変数 | 役割 |
+|---|---|
+| `placeholder` | 翻訳中…や英訳結果のプレースホルダー |
+| `resultEn` | 英訳結果を表示する要素 |
+
+#### UI状態の更新
+
+```javascript
+placeholder.textContent   = '翻訳中…';
+placeholder.style.display = 'block';
+resultEn.style.display    = 'none';
+```
+
+- **`textContent`**：要素の中のテキストを変更
+- **`style.display`**：表示/非表示を切り替え
+
+| プロパティ | 意味 |
+|---|---|
+| `'block'` | 表示する |
+| `'none'` | 非表示にする |
+
+つまりボタン押した瞬間に画面を「ローディング状態」にする処理。
+
+---
+
+### ブロック2：translateText関数の中盤（API通信）
+
+```javascript
+try {
+  const res = await fetch('/api/translate', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text: input }),
+  });
+
+  const data = await res.json();
+```
+
+#### `const res = await fetch('/api/translate', { ... });`
+
+**ブラウザからサーバーに通信する瞬間**。最重要部分。
+
+##### `fetch()` とは
+ブラウザに標準装備されてる通信機能。指定したURLにリクエストを送る。
+
+##### 引数の意味
+
+```javascript
+fetch('/api/translate', {
+  method: 'POST',                                    // ← 通信方法
+  headers: { 'Content-Type': 'application/json' },   // ← データ形式
+  body: JSON.stringify({ text: input }),             // ← 送るデータ
+});
+```
+
+| 項目 | 意味 |
+|---|---|
+| `'/api/translate'` | 送信先（server.jsで定義したエンドポイントと一致！） |
+| `method: 'POST'` | POSTメソッドで送る |
+| `headers` | 「JSON形式でデータ送るよ」と宣言 |
+| `body` | 実際に送るデータ |
+
+##### `JSON.stringify({ text: input })`
+
+JavaScriptオブジェクト→JSON文字列に変換：
+
+```javascript
+{ text: "今日は疲れた" }
+   ↓ JSON.stringify
+'{"text":"今日は疲れた"}'
+```
+
+ネット越しに送るには文字列にする必要がある。
+
+##### `await` の役割
+API通信は時間かかる（数秒）。`await` で結果が返るまで待つ。
+
+#### `const data = await res.json();`
+
+サーバーからの返答を解析：
+
+- `res` はレスポンスオブジェクト（生データ）
+- `res.json()` でJSONを解析してオブジェクトに変換
+- `await` で解析完了を待つ
+
+例：
+```javascript
+// サーバーから返ってくる文字列
+'{"translation":"I'm exhausted today."}'
+   ↓ res.json()
+// JavaScriptオブジェクトに変換
+{ translation: "I'm exhausted today." }
+```
+
+これで `data.translation` で英訳取り出せる。
+
+---
+
+### ブロック3：translateText関数の後半（結果表示）
+
+```javascript
+  if (!res.ok) {
+    placeholder.textContent = data.error || '翻訳に失敗しました。';
+    return;
+  }
+
+  placeholder.style.display = 'none';
+  resultEn.style.display    = 'none';
+  void resultEn.offsetWidth;
+  resultEn.textContent      = `"${data.translation}"`;
+  resultEn.style.display    = 'block';
+} catch (_) {
+  placeholder.textContent = 'ネットワークエラーが発生しました。';
+}
+```
+
+#### `if (!res.ok) { ... }`
+
+`res.ok`：HTTPステータスコードが200番台（成功）なら `true`、それ以外なら `false`。
+
+| ステータス | `res.ok` |
+|---|---|
+| 200 OK | true |
+| 400 Bad Request | false |
+| 500 Internal Server Error | false |
+
+サーバーがエラーを返した場合、サーバーが返したエラーメッセージを表示し、`return` で処理終了。
+
+#### 結果表示の謎の処理
+
+```javascript
+placeholder.style.display = 'none';
+resultEn.style.display    = 'none';
+void resultEn.offsetWidth;
+resultEn.textContent      = `"${data.translation}"`;
+resultEn.style.display    = 'block';
+```
+
+**`void resultEn.offsetWidth;`** ← これが謎ポイント。
+
+##### なぜこれがある？
+
+**CSSアニメーションを再実行するためのテクニック**。
+
+`resultEn` にはフェードインアニメーションが設定されてる（CSS側で）。
+2回目以降の翻訳時、`display: none` → `block` に戻すだけだとアニメーションが再生されない。
+
+`void resultEn.offsetWidth;` で強制的にブラウザに「要素を再計算しろ」と命令することで、アニメーションがリセットされて、再生される。
+
+これはフロントエンド界隈の有名な小技。
+
+##### `void` って何？
+「式を実行するけど、結果を捨てる」演算子。
+ここでは「`offsetWidth` を読み出す（＝ブラウザに再計算させる）だけで、値はいらない」という意味。
+
+#### テンプレートリテラル
+
+```javascript
+resultEn.textContent = `"${data.translation}"`;
+```
+
+バッククォートで英訳をクォートで囲んで表示。
+
+例：
+```javascript
+data.translation = "I'm exhausted today."
+   ↓
+resultEn.textContent = '"I\'m exhausted today."'
+```
+
+#### `} catch (_) { ... }`
+
+通信自体が失敗した場合（ネットワーク切断など）。
+
+`(_)` の意味：エラーオブジェクトを受け取るけど使わないことを示す慣習。`(error)` でもOK。
+
+```javascript
+placeholder.textContent = 'ネットワークエラーが発生しました。';
+```
+
+ユーザーに分かるエラーメッセージ表示。
+
+---
+
+### ブロック4：テキスト欄の自動リサイズ
+
+```javascript
+const ta = document.getElementById('jpInput');
+
+ta.addEventListener('input', () => {
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';
+});
+```
+
+#### イベントリスナーとは
+
+「特定のイベントが起きた時に、関数を実行する」設定。
+
+`'input'` イベント：ユーザーが入力欄に1文字打つたびに発生。
+
+#### 自動リサイズの仕組み
+
+```javascript
+ta.style.height = 'auto';                              // 一旦リセット
+ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';  // 内容に合わせる
+```
+
+- **`ta.scrollHeight`**：内容を全部表示するのに必要な高さ
+- **`Math.min(ta.scrollHeight, 100)`**：scrollHeightと100のうち小さい方
+
+→ 入力に合わせて高さが伸びるけど、最大100pxまで。
+
+LINEとかDiscordの入力欄で見るやつ。改行するたびに枠が広がる動き。
+
+---
+
+### ブロック5：Enterキーで送信
+
+```javascript
+ta.addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    translateText();
+  }
+});
+```
+
+#### `'keydown'` イベント
+キーが押された瞬間に発生。
+`e` はイベント情報（どのキーが押されたかなど）。
+
+#### 条件チェック
+
+```javascript
+if (e.key === 'Enter' && !e.shiftKey) {
+```
+
+- `e.key === 'Enter'`：Enterキーが押された
+- `!e.shiftKey`：Shiftキーは押されてない
+
+| 操作 | 動作 |
+|---|---|
+| Enter | **送信** |
+| Shift + Enter | 改行（普通の動作） |
+
+LINE/Discord式。
+
+#### `e.preventDefault();`
+ブラウザのデフォルト動作をキャンセル。
+通常Enter押すと改行が入るけど、それをキャンセルして送信処理だけ走らせる。
+
+---
+
+### サーバーとの連携整理
+
+```
+ブラウザ側（このJS）              サーバー側（server.js）
+─────────────────              ─────────────────
+fetch('/api/translate', ...)  →  app.post('/api/translate', ...)
+body: { text: "今日は疲れた" }  →  req.body.text
+                              ←  res.json({ translation: "..." })
+data.translation              ←
+```
+
+両方が同じURL（`/api/translate`）で繋がってる。
+
+---
+
+## 4. 重要な概念まとめ
 
 ### ポート番号
 - PCの中の「窓口番号」
@@ -391,6 +755,7 @@ console.log(`Server running → http://localhost:${PORT}`);
 ### JSON
 - データを送り合うときの標準フォーマット
 - `{ "text": "今日は疲れた" }` みたいな形
+- ネット越しに送るには `JSON.stringify()` で文字列化が必要
 
 ### SDK
 - Software Development Kit
@@ -412,11 +777,28 @@ console.log(`Server running → http://localhost:${PORT}`);
 - 失敗したら `catch` ブロックが走る
 - これがないとサーバー全体がクラッシュすることも
 
+### fetch
+- ブラウザ標準の通信機能
+- サーバーにリクエストを送る
+- `await` とセットで使う
+
+### イベントリスナー
+- 「特定のイベントで関数を実行」する仕組み
+- `addEventListener('イベント名', 関数)` で登録
+- 例：`'click'`, `'input'`, `'keydown'`
+
+### DOM操作
+- HTMLの要素をJavaScriptで操作すること
+- `document.getElementById('id名')` で取得
+- `.textContent`, `.style.display`, `.value` などで操作
+
 ---
 
-## 4. 理解度チェック（自分用クイズ）
+## 5. 理解度チェック（自分用クイズ）
 
-### 質問1（基礎）
+### server.js編
+
+#### 質問1（基礎）
 `require('dotenv').config();` がないとどうなる？
 
 <details>
@@ -428,7 +810,7 @@ Anthropic APIへの認証が失敗して、翻訳エラーが出る。
 
 </details>
 
-### 質問2（重要）
+#### 質問2（重要）
 `async` と `await` はなぜ必要？なくしたらどうなる？
 
 <details>
@@ -443,8 +825,8 @@ API通信は時間がかかる処理（数秒）。
 
 </details>
 
-### 質問3（応用）
-エンドポイントの URL を `/api/translate` から `/api/honyaku` に変えたら、どこを変えれば動く？
+#### 質問3（応用）
+エンドポイントのURLを `/api/translate` から `/api/honyaku` に変えたら、どこを変えれば動く？
 
 <details>
 <summary>答え</summary>
@@ -454,11 +836,11 @@ server.js の `app.post('/api/translate', ...)` を `app.post('/api/honyaku', ..
 それだけだとブラウザ側からのアクセス先が古いままなので、
 index.html の `fetch('/api/translate', ...)` も `fetch('/api/honyaku', ...)` に変える必要がある。
 
-サーバーとフロントの**両方**を変える必要がある。
+サーバーとフロントの両方を変える必要がある。
 
 </details>
 
-### 質問4（深掘り）
+#### 質問4（深掘り）
 システムプロンプトを「日本語→韓国語の翻訳者」に変えたらどうなる？
 
 <details>
@@ -473,11 +855,69 @@ index.html の `fetch('/api/translate', ...)` も `fetch('/api/honyaku', ...)` �
 
 </details>
 
+### index.html JavaScript編
+
+#### 質問5
+`fetch('/api/translate')` の URL を `/api/honyaku` に変えたら何が起きる？
+
+<details>
+<summary>答え</summary>
+
+ブラウザは `/api/honyaku` にリクエストを送るが、
+server.js側にそのエンドポイントが定義されていないため404エラー。
+画面に「翻訳に失敗しました」と表示される。
+
+server.js側の `app.post('/api/translate', ...)` も同じURLに変えれば動く。
+
+</details>
+
+#### 質問6
+`await` を消したらどうなる？
+
+<details>
+<summary>答え</summary>
+
+`fetch()` は Promise を返す（処理がまだ終わってない状態のオブジェクト）。
+`await` なしだと、`res` が Promise のまま次の `res.ok` の判定に進む。
+結果として正しい判定ができず、おかしな挙動になる。
+
+通信は時間がかかるので、結果を待たずに進むと値が空のままになる。
+
+</details>
+
+#### 質問7
+`e.preventDefault()` がないとどうなる？
+
+<details>
+<summary>答え</summary>
+
+Enterキーを押したときに、ブラウザのデフォルト動作（改行）も実行されてしまう。
+結果として、送信は走るが入力欄にも改行が入って残ってしまう。
+
+UIとしては気持ち悪い動きになる。
+
+</details>
+
+#### 質問8
+`void resultEn.offsetWidth;` を消したらどうなる？
+
+<details>
+<summary>答え</summary>
+
+CSSアニメーション（フェードイン）が2回目以降再生されなくなる。
+1回目の翻訳ではアニメーション付きで表示されるが、
+2回目以降は瞬時に切り替わるだけになる。
+
+機能としては動くが、視覚的な演出がなくなる。
+
+</details>
+
 ---
 
-## 5. 今後追加予定
+## 6. 今後追加予定
 
-- [ ] index.html の解説（HTML / CSS / JavaScript）
+- [ ] index.html HTML部分の解説（骨組み）
+- [ ] index.html CSS部分の解説（見た目）
 - [ ] package.json の解説（依存関係管理）
 - [ ] git の基本操作まとめ
 - [ ] 機能追加の記録（メッセージ履歴、単語ピックアップなど）
