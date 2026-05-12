@@ -10,9 +10,10 @@ Claude Codeに書かせたコードを「自分で説明できる」レベルま
 1. [プロジェクト全体の構造](#1-プロジェクト全体の構造)
 2. [server.js 解説](#2-serverjs-解説)
 3. [index.html JavaScript部分の解説](#3-indexhtml-javascript部分の解説)
-4. [重要な概念まとめ](#4-重要な概念まとめ)
-5. [理解度チェック（自分用クイズ）](#5-理解度チェック自分用クイズ)
-6. [今後追加予定](#6-今後追加予定)
+4. [index.html HTML部分の解説](#4-indexhtml-html部分の解説)
+5. [重要な概念まとめ](#5-重要な概念まとめ)
+6. [理解度チェック（自分用クイズ）](#6-理解度チェック自分用クイズ)
+7. [今後追加予定](#7-今後追加予定)
 
 ---
 
@@ -118,11 +119,10 @@ const path = require('path');
 #### `const cors = require('cors');`
 - CORS（違うアドレス間の通信を許可する）を設定する道具
 - ブラウザはセキュリティのため、デフォルトで違うアドレス間通信をブロック
-- 将来別アドレスのサーバーから叩けるよう、入れておく
 
 #### `const path = require('path');`
 - ファイルパスを扱う道具（Node.js標準装備）
-- `path.join()` でWindowsとLinuxの違い（`\` と `/`）を吸収
+- `path.join()` でWindowsとLinuxの違いを吸収
 
 #### キーワード解説
 
@@ -154,12 +154,10 @@ app.use(express.static(path.join(__dirname)));
 #### `const app = express();`
 - Expressのアプリ本体（サーバーの中身）を作る
 - これから `app.use(...)` や `app.post(...)` でカスタマイズ
-- **料理を始める前の厨房**
 
 #### `const client = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });`
 - Anthropic APIとの通信窓口を作る
 - `.env` から読み込んだAPIキーをセット
-- 以降 `client.messages.create({...})` でClaude API叩ける
 - ⚠️ **エラー源**：`process.env.ANTHROPIC_API_KEY` が `undefined` だと認証失敗
 
 #### `app.use(cors());`
@@ -183,11 +181,9 @@ app.use(express.static(path.join(__dirname)));
 リクエスト → cors() → express.json() → express.static() → エンドポイント
 ```
 
-順番にフィルター通って処理される。
-
 ---
 
-### ブロック3：翻訳エンドポイント【メイン】（14〜46行目）
+### ブロック3：翻訳エンドポイント【メイン】
 
 ```javascript
 app.post('/api/translate', async (req, res) => {
@@ -227,15 +223,13 @@ app.post('/api/translate', async (req, res) => {
 #### `app.post('/api/translate', async (req, res) => {...})`
 
 - **POSTメソッドのリクエストを受け取る**設定
-- ブラウザが `POST http://localhost:3000/api/translate` を送ってきたら、この関数を実行
 - `req`: リクエスト（ブラウザからの注文）
 - `res`: レスポンス（サーバーからの返答）
-- `async`: 「この関数は時間がかかる処理が入る」と宣言（`await` とセット）
+- `async`: 「この関数は時間がかかる処理が入る」と宣言
 
 #### `const { text } = req.body;`
 
-- リクエスト本体から `text` を取り出す
-- **分割代入**という書き方
+リクエスト本体から `text` を取り出す（**分割代入**）。
 
 省略しない書き方:
 ```javascript
@@ -252,39 +246,11 @@ if (!text || typeof text !== 'string' || !text.trim()) {
 
 | 条件 | 意味 |
 |---|---|
-| `!text` | textが存在しない（null, undefined, 空） |
-| `typeof text !== 'string'` | 文字列じゃない（数字とか配列） |
+| `!text` | textが存在しない |
+| `typeof text !== 'string'` | 文字列じゃない |
 | `!text.trim()` | 空白だけの文字列 |
 
-いずれかに該当したら、ステータス400（Bad Request）でエラー返す。
-`return` でここで関数終了、API呼び出しに進ませない。
-
-#### try-catch（エラーハンドリング）
-
-```javascript
-try {
-  // 危険な処理
-} catch (error) {
-  // エラー時の処理
-}
-```
-
-- `try` ブロック：失敗しうる処理（API通信など）
-- `catch` ブロック：失敗した時に走る
-
 #### Claude API呼び出し
-
-```javascript
-const response = await client.messages.create({
-  model: 'claude-haiku-4-5-20251001',
-  max_tokens: 512,
-  system: [...],
-  messages: [{ role: 'user', content: text.trim() }],
-});
-```
-
-- **`await`**：この処理が終わるまで待つ（API通信は数秒かかる）
-- **`client.messages.create({...})`**：Claude APIにリクエスト
 
 | パラメータ | 意味 |
 |---|---|
@@ -301,14 +267,7 @@ Translate the given Japanese text into natural, fluent English.
 Output only the English translation — no explanations, no quotation marks, no extra text.
 ```
 
-→「日英翻訳者として、自然な英訳だけ返せ。説明・引用符・余計な文字なし」
-
 これが**プロンプトエンジニアリング**。AIにどう動いてほしいか指示する技術。
-
-#### `cache_control: { type: 'ephemeral' }`
-
-**プロンプトキャッシング**機能。
-同じシステムプロンプトを何度も送る時、Anthropic側でキャッシュして料金を安くする。
 
 #### 結果取り出し
 
@@ -317,31 +276,10 @@ const translation = response.content[0]?.text ?? '';
 res.json({ translation });
 ```
 
-- **`?.`**（オプショナルチェイニング）：`content[0]` が存在しなくてもエラーにならない
-- **`?? ''`**（Null合体演算子）：左が `undefined` か `null` なら、右の `''` を使う
-- **`res.json({ translation })`**：ブラウザにJSON形式で返答
-
-返答例:
-```json
-{ "translation": "I'm exhausted today." }
-```
+- **`?.`**（オプショナルチェイニング）：存在しなくてもエラーにならない
+- **`?? ''`**（Null合体演算子）：左が `undefined`/`null` なら右を使う
 
 #### catch ブロック（エラーハンドリング）
-
-```javascript
-} catch (error) {
-  console.error('Translation error:', error);
-
-  if (error instanceof Anthropic.AuthenticationError) {
-    return res.status(500).json({ error: 'APIキーが無効です。.envを確認してください。' });
-  }
-  if (error instanceof Anthropic.RateLimitError) {
-    return res.status(429).json({ error: 'リクエストが多すぎます。' });
-  }
-
-  res.status(500).json({ error: '翻訳に失敗しました。' });
-}
-```
 
 | エラー種別 | 原因 | ステータス |
 |---|---|---|
@@ -349,12 +287,9 @@ res.json({ translation });
 | `RateLimitError` | リクエスト多すぎ | 429 |
 | その他 | 通信失敗、不明エラー | 500 |
 
-- **`console.error()`**：サーバー側のターミナルにエラー出力（デバッグ用）
-- **`instanceof`**：「このエラーは○○型？」チェック
-
 ---
 
-### ブロック4：サーバー起動（48〜52行目）
+### ブロック4：サーバー起動
 
 ```javascript
 const PORT = process.env.PORT || 3000;
@@ -363,52 +298,15 @@ app.listen(PORT, () => {
 });
 ```
 
-#### `const PORT = process.env.PORT || 3000;`
-- `.env` に `PORT` 指定があればそれを使う、なければ3000
-- `||`：左が「なし」なら右を使う
-
-#### `app.listen(PORT, () => {...})`
-- 指定ポートでサーバー起動
-- 第2引数の関数は「起動完了したら実行」
-
-#### テンプレートリテラル
-
-```javascript
-console.log(`Server running → http://localhost:${PORT}`);
-```
-
-- バッククォート `` ` `` で囲む
-- 変数を `${...}` で埋め込める
-
----
-
-### server.js 全体の流れまとめ
-
-```
-【準備】
-1. 道具読み込み（require）
-2. サーバー作成（app）
-3. Anthropic通信窓口作成（client）
-4. ミドルウェア設定（cors, json, static）
-
-【メイン処理】
-5. POST /api/translate を受ける関数定義
-   ├─ 入力検証
-   ├─ Anthropic APIに翻訳依頼（await）
-   ├─ 結果をJSONで返す
-   └─ エラー時は適切なメッセージ返す
-
-【起動】
-6. 指定ポートで待ち受け開始
-```
+- **`||`**：左が「なし」なら右を使う
+- **`app.listen()`**：指定ポートでサーバー起動
+- **テンプレートリテラル**（バッククォート）で変数を埋め込み
 
 ---
 
 ## 3. index.html JavaScript部分の解説
 
 ### 全体像
-
-このJSがやってること：
 
 ```
 1. 関数 translateText() の定義
@@ -438,14 +336,9 @@ async function translateText() {
   resultEn.style.display    = 'none';
 ```
 
-#### `async function translateText() {`
-
-- **`async`**：「この関数の中で `await` を使うよ」宣言
-- **`function translateText()`**：`translateText` という名前の関数を定義
-
 #### `const input = document.getElementById('jpInput').value.trim();`
 
-3つの処理が連続してる。分解すると：
+3つの処理が連続：
 
 ```javascript
 const element = document.getElementById('jpInput');  // 1. HTML要素取得
@@ -453,46 +346,13 @@ const value = element.value;                          // 2. 入力値取得
 const input = value.trim();                           // 3. 前後の空白削除
 ```
 
-- **`document.getElementById('jpInput')`**：HTMLの中から `id="jpInput"` の要素（入力欄）を取得
-- **`.value`**：入力欄の中身を取り出す
-- **`.trim()`**：文字列の前後の空白を削除
-
-例：`"  今日は疲れた  "` → `"今日は疲れた"`
-
-#### `if (!input) return;`
-
-入力が空っぽなら関数終了。
-server.js側でも検証してるが、**両方でチェック**するのがプロの作法（多重防御）。
-
-#### 画面要素の取得
-
-```javascript
-const placeholder = document.getElementById('placeholder');
-const resultEn    = document.getElementById('resultEn');
-```
-
-| 変数 | 役割 |
-|---|---|
-| `placeholder` | 翻訳中…や英訳結果のプレースホルダー |
-| `resultEn` | 英訳結果を表示する要素 |
-
 #### UI状態の更新
-
-```javascript
-placeholder.textContent   = '翻訳中…';
-placeholder.style.display = 'block';
-resultEn.style.display    = 'none';
-```
-
-- **`textContent`**：要素の中のテキストを変更
-- **`style.display`**：表示/非表示を切り替え
 
 | プロパティ | 意味 |
 |---|---|
-| `'block'` | 表示する |
-| `'none'` | 非表示にする |
-
-つまりボタン押した瞬間に画面を「ローディング状態」にする処理。
+| `textContent` | 要素の中のテキストを変更 |
+| `style.display = 'block'` | 表示する |
+| `style.display = 'none'` | 非表示にする |
 
 ---
 
@@ -509,31 +369,16 @@ try {
   const data = await res.json();
 ```
 
-#### `const res = await fetch('/api/translate', { ... });`
-
-**ブラウザからサーバーに通信する瞬間**。最重要部分。
-
-##### `fetch()` とは
-ブラウザに標準装備されてる通信機能。指定したURLにリクエストを送る。
-
-##### 引数の意味
-
-```javascript
-fetch('/api/translate', {
-  method: 'POST',                                    // ← 通信方法
-  headers: { 'Content-Type': 'application/json' },   // ← データ形式
-  body: JSON.stringify({ text: input }),             // ← 送るデータ
-});
-```
+#### `fetch()` の引数
 
 | 項目 | 意味 |
 |---|---|
-| `'/api/translate'` | 送信先（server.jsで定義したエンドポイントと一致！） |
+| `'/api/translate'` | 送信先（server.jsのエンドポイントと一致） |
 | `method: 'POST'` | POSTメソッドで送る |
-| `headers` | 「JSON形式でデータ送るよ」と宣言 |
-| `body` | 実際に送るデータ |
+| `headers` | 「JSON形式」と宣言 |
+| `body` | 送るデータ |
 
-##### `JSON.stringify({ text: input })`
+#### `JSON.stringify({ text: input })`
 
 JavaScriptオブジェクト→JSON文字列に変換：
 
@@ -543,29 +388,9 @@ JavaScriptオブジェクト→JSON文字列に変換：
 '{"text":"今日は疲れた"}'
 ```
 
-ネット越しに送るには文字列にする必要がある。
-
-##### `await` の役割
-API通信は時間かかる（数秒）。`await` で結果が返るまで待つ。
-
 #### `const data = await res.json();`
 
-サーバーからの返答を解析：
-
-- `res` はレスポンスオブジェクト（生データ）
-- `res.json()` でJSONを解析してオブジェクトに変換
-- `await` で解析完了を待つ
-
-例：
-```javascript
-// サーバーから返ってくる文字列
-'{"translation":"I'm exhausted today."}'
-   ↓ res.json()
-// JavaScriptオブジェクトに変換
-{ translation: "I'm exhausted today." }
-```
-
-これで `data.translation` で英訳取り出せる。
+サーバーからの返答を解析。`res.json()` でJSONをオブジェクトに変換。
 
 ---
 
@@ -587,9 +412,9 @@ API通信は時間かかる（数秒）。`await` で結果が返るまで待つ
 }
 ```
 
-#### `if (!res.ok) { ... }`
+#### `if (!res.ok)`
 
-`res.ok`：HTTPステータスコードが200番台（成功）なら `true`、それ以外なら `false`。
+`res.ok`：HTTPステータスコードが200番台なら `true`、それ以外なら `false`。
 
 | ステータス | `res.ok` |
 |---|---|
@@ -597,61 +422,17 @@ API通信は時間かかる（数秒）。`await` で結果が返るまで待つ
 | 400 Bad Request | false |
 | 500 Internal Server Error | false |
 
-サーバーがエラーを返した場合、サーバーが返したエラーメッセージを表示し、`return` で処理終了。
-
-#### 結果表示の謎の処理
-
-```javascript
-placeholder.style.display = 'none';
-resultEn.style.display    = 'none';
-void resultEn.offsetWidth;
-resultEn.textContent      = `"${data.translation}"`;
-resultEn.style.display    = 'block';
-```
-
-**`void resultEn.offsetWidth;`** ← これが謎ポイント。
-
-##### なぜこれがある？
+#### `void resultEn.offsetWidth;` の謎
 
 **CSSアニメーションを再実行するためのテクニック**。
 
-`resultEn` にはフェードインアニメーションが設定されてる（CSS側で）。
-2回目以降の翻訳時、`display: none` → `block` に戻すだけだとアニメーションが再生されない。
-
-`void resultEn.offsetWidth;` で強制的にブラウザに「要素を再計算しろ」と命令することで、アニメーションがリセットされて、再生される。
-
-これはフロントエンド界隈の有名な小技。
-
-##### `void` って何？
-「式を実行するけど、結果を捨てる」演算子。
-ここでは「`offsetWidth` を読み出す（＝ブラウザに再計算させる）だけで、値はいらない」という意味。
-
-#### テンプレートリテラル
-
-```javascript
-resultEn.textContent = `"${data.translation}"`;
-```
-
-バッククォートで英訳をクォートで囲んで表示。
-
-例：
-```javascript
-data.translation = "I'm exhausted today."
-   ↓
-resultEn.textContent = '"I\'m exhausted today."'
-```
+`display: none` → `block` に戻すだけだとアニメーションが再生されない。
+`void resultEn.offsetWidth;` で強制的にブラウザに「要素を再計算しろ」と命令することで、アニメーションがリセットされる。
 
 #### `} catch (_) { ... }`
 
 通信自体が失敗した場合（ネットワーク切断など）。
-
-`(_)` の意味：エラーオブジェクトを受け取るけど使わないことを示す慣習。`(error)` でもOK。
-
-```javascript
-placeholder.textContent = 'ネットワークエラーが発生しました。';
-```
-
-ユーザーに分かるエラーメッセージ表示。
+`(_)` の意味：エラーオブジェクトを受け取るけど使わないことを示す慣習。
 
 ---
 
@@ -666,25 +447,12 @@ ta.addEventListener('input', () => {
 });
 ```
 
-#### イベントリスナーとは
-
-「特定のイベントが起きた時に、関数を実行する」設定。
-
-`'input'` イベント：ユーザーが入力欄に1文字打つたびに発生。
-
 #### 自動リサイズの仕組み
 
-```javascript
-ta.style.height = 'auto';                              // 一旦リセット
-ta.style.height = Math.min(ta.scrollHeight, 100) + 'px';  // 内容に合わせる
-```
-
 - **`ta.scrollHeight`**：内容を全部表示するのに必要な高さ
-- **`Math.min(ta.scrollHeight, 100)`**：scrollHeightと100のうち小さい方
+- **`Math.min(ta.scrollHeight, 100)`**：内容に合わせて伸びるけど最大100pxまで
 
-→ 入力に合わせて高さが伸びるけど、最大100pxまで。
-
-LINEとかDiscordの入力欄で見るやつ。改行するたびに枠が広がる動き。
+LINE/Discordの入力欄式。
 
 ---
 
@@ -699,29 +467,12 @@ ta.addEventListener('keydown', e => {
 });
 ```
 
-#### `'keydown'` イベント
-キーが押された瞬間に発生。
-`e` はイベント情報（どのキーが押されたかなど）。
-
-#### 条件チェック
-
-```javascript
-if (e.key === 'Enter' && !e.shiftKey) {
-```
-
-- `e.key === 'Enter'`：Enterキーが押された
-- `!e.shiftKey`：Shiftキーは押されてない
-
 | 操作 | 動作 |
 |---|---|
 | Enter | **送信** |
-| Shift + Enter | 改行（普通の動作） |
+| Shift + Enter | 改行 |
 
-LINE/Discord式。
-
-#### `e.preventDefault();`
-ブラウザのデフォルト動作をキャンセル。
-通常Enter押すと改行が入るけど、それをキャンセルして送信処理だけ走らせる。
+`e.preventDefault()`：ブラウザのデフォルト動作（改行）をキャンセル。
 
 ---
 
@@ -740,7 +491,272 @@ data.translation              ←
 
 ---
 
-## 4. 重要な概念まとめ
+## 4. index.html HTML部分の解説
+
+### 全体構造（鳥の目）
+
+```
+<body>
+  ├─ <header>           ← 上部のロゴ＋タグ
+  │   ├─ ロゴ「phrase」
+  │   └─ タグ「English Learning」
+  │
+  └─ <div class="main">
+      ├─ <div class="chat-panel">    ← メッセージ表示エリア
+      │   ├─ 日付表示「Today」
+      │   ├─ メッセージ1（AI）
+      │   ├─ メッセージ2（ユーザー）
+      │   └─ メッセージ3（AI＋英訳）
+      │
+      └─ <div class="input-panel">   ← 入力エリア
+          ├─ ラベル「今日の一言」
+          ├─ 入力欄＋ボタン
+          └─ 英訳結果表示
+</body>
+```
+
+---
+
+### ブロック1：header（上部のヘッダー）
+
+```html
+<header>
+  <div class="logo">phr<span>a</span>se</div>
+  <div class="header-tag">English Learning</div>
+</header>
+```
+
+#### `<header>` タグ
+- HTML5の**意味のあるタグ**（セマンティックタグ）
+- 「これはヘッダー部分です」とブラウザや検索エンジンに伝える
+- `<div>` でも見た目は同じだが、**意味が伝わらない**
+
+#### `<div class="logo">phr<span>a</span>se</div>`
+
+**`<div>`** = 汎用ブロック（特に意味はない、グループ化する箱）
+**`class="logo"`** = CSSから「.logo」で指定するための名札
+
+中身：
+| 部分 | 意味 |
+|---|---|
+| `phr` | 普通の文字 |
+| `<span>a</span>` | "a" だけ別タグで囲む |
+| `se` | 普通の文字 |
+
+**なぜ `a` だけ `<span>` で囲む？**
+
+CSS で：
+```css
+.logo span { font-style: italic; }
+```
+
+→「ロゴの中の `<span>` だけ斜体にする」設定。
+**`a` だけイタリック体**にしてオシャレ感を出すための仕掛け。
+
+---
+
+### ブロック2：チャットパネル（メッセージ表示エリア）
+
+```html
+<div class="chat-panel">
+  <div class="chat-date">Today</div>
+
+  <div class="message in">
+    <div class="avatar">AI</div>
+    <div class="bubble-col">
+      <div class="bubble">今日の気持ちを、英語で伝えてみましょう。<br>どんな一日でしたか？</div>
+      <div class="ts">09:12</div>
+    </div>
+  </div>
+
+  <!-- 続く -->
+</div>
+```
+
+#### メッセージ1個の構造
+
+```html
+<div class="message in">       ← クラス2つ：「message」と「in」
+  <div class="avatar">AI</div>  ← アイコン
+  <div class="bubble-col">      ← 吹き出しと時刻のグループ
+    <div class="bubble">...</div>  ← 吹き出し本体
+    <div class="ts">09:12</div>    ← タイムスタンプ
+  </div>
+</div>
+```
+
+#### `class="message in"` のクラス2つ持ち
+
+**重要なテクニック**：1つの要素に**複数のクラス**を付けられる。
+
+- `message` → 全メッセージ共通の見た目（吹き出しの基本構造）
+- `in` または `out` → AI（受信）かユーザー（送信）かの区別
+
+CSSで使い分け：
+```css
+.message      { display: flex; align-items: flex-end; }      /* 共通 */
+.message.out  { flex-direction: row-reverse; }               /* outだけ反転 */
+```
+
+これが**LINEで自分のメッセージは右、相手は左**になる仕組み。
+
+#### `<br>` タグ
+
+```html
+今日の気持ちを、英語で伝えてみましょう。<br>どんな一日でしたか？
+```
+
+**`<br>`** = 強制改行。閉じタグ不要。
+HTMLは普通に改行しても無視されるから、`<br>` で明示的に改行する。
+
+---
+
+### ブロック3：3つのメッセージ
+
+このパネルには**サンプルメッセージが3つ**ハードコードされてる：
+
+#### メッセージ1：AI（in）
+```html
+<div class="message in">
+  <div class="avatar">AI</div>
+  <div class="bubble-col">
+    <div class="bubble">今日の気持ちを、英語で伝えてみましょう。<br>どんな一日でしたか？</div>
+    <div class="ts">09:12</div>
+  </div>
+</div>
+```
+
+→ 左寄せで表示される（`in`クラスのCSS設定）
+
+#### メッセージ2：ユーザー（out）
+```html
+<div class="message out">
+  <div class="bubble-col">
+    <div class="bubble">今日は本当に疲れた…</div>
+    <div class="ts">09:14</div>
+  </div>
+</div>
+```
+
+→ 右寄せで表示される（`out`クラスで反転）
+→ アバターなし（自分のメッセージだから）
+
+#### メッセージ3：AI（翻訳結果）
+```html
+<div class="message in">
+  <div class="avatar">AI</div>
+  <div class="bubble-col">
+    <div class="bubble translation">
+      <div class="en-label">English</div>
+      <div class="en-result">"I'm exhausted today."</div>
+    </div>
+    <div class="ts">09:14</div>
+  </div>
+</div>
+```
+
+→ `bubble translation` ← **クラス2つ持ち**
+→ `bubble` の見た目に加えて `translation` 用の追加スタイル（金色枠）
+
+#### 重要な気づき
+
+**この3つは固定（ハードコード）された見本**。実際の動作ではこの下にメッセージは追加されない。
+
+「メッセージみたいにならない」と感じてた違和感の原因はここ。
+**本物のメッセージ追加機能はまだ実装されてない**。
+
+→ 今後の機能追加対象。
+
+---
+
+### ブロック4：入力パネル
+
+```html
+<div class="input-panel">
+  <div class="panel-label">今日の一言</div>
+  <div class="input-row">
+    <textarea id="jpInput" placeholder="日本語で入力…" rows="1"></textarea>
+    <button class="btn" onclick="translateText()">英訳する</button>
+  </div>
+  <div class="result-area">
+    <div class="result-placeholder" id="placeholder">英訳結果がここに表示されます</div>
+    <div class="result-en" id="resultEn"></div>
+  </div>
+</div>
+```
+
+#### `<textarea>` タグ
+- **複数行入力できる入力欄**
+- `<input>` は1行のみ、`<textarea>` は複数行
+- LINEの入力欄みたいに改行できる
+
+属性：
+| 属性 | 意味 |
+|---|---|
+| `id="jpInput"` | JavaScriptから `getElementById('jpInput')` で取得 |
+| `placeholder="日本語で入力…"` | 入力前の薄い灰色の案内文 |
+| `rows="1"` | 初期表示行数 |
+
+#### `<button>` タグ
+```html
+<button class="btn" onclick="translateText()">英訳する</button>
+```
+
+| 属性 | 意味 |
+|---|---|
+| `class="btn"` | CSSで装飾するため |
+| `onclick="translateText()"` | クリック時にJSの`translateText()`関数を実行 |
+
+`onclick="..."` は**古いスタイル**。最近はJS側で `addEventListener('click', ...)` を使う方が主流。動作は同じ。
+
+#### result-area（結果表示エリア）
+
+2つの要素が入ってる：
+- **`placeholder`** ：初期表示「英訳結果がここに表示されます」、または「翻訳中…」
+- **`resultEn`** ：実際の英訳結果
+
+JavaScriptで**表示/非表示を切り替え**：
+- 待機中 → placeholder 表示
+- 翻訳中 → placeholder に「翻訳中…」
+- 完了 → placeholder 非表示、resultEn 表示
+
+---
+
+### HTMLとJavaScriptの繋がり整理
+
+```
+HTML側のid              JavaScript側
+─────────────         ─────────────
+id="jpInput"     ←→   document.getElementById('jpInput')
+id="placeholder" ←→   document.getElementById('placeholder')
+id="resultEn"    ←→   document.getElementById('resultEn')
+
+onclick="translateText()" ←→ async function translateText() {...}
+```
+
+**id** は「JavaScriptから操作する目印」。
+
+---
+
+### HTML全体の役割まとめ
+
+| パート | 役割 |
+|---|---|
+| `<header>` | 見た目のロゴ表示 |
+| `.chat-panel` | **見本のメッセージ3つ表示**（実装は未完成） |
+| `.input-panel` | 入力欄＋ボタン＋結果表示エリア |
+
+#### コンセプト
+
+**「LINE風の見た目」を作るために**、メッセージ吹き出しの構造を真似てる：
+
+- 左右で配置を変える（`in` / `out`）
+- アバター＋吹き出し＋タイムスタンプ
+- 吹き出しの形（角の丸み）も左右で違う
+
+---
+
+## 5. 重要な概念まとめ
 
 ### ポート番号
 - PCの中の「窓口番号」
@@ -750,7 +766,6 @@ data.translation              ←
 ### CORS（コルス）
 - Cross-Origin Resource Sharing
 - 違うアドレス間の通信を許可する仕組み
-- デフォルトでブラウザが「違うアドレス間通信」をブロックする
 
 ### JSON
 - データを送り合うときの標準フォーマット
@@ -770,12 +785,10 @@ data.translation              ←
 ### async / await
 - 時間がかかる処理（API通信など）を扱う
 - `async` 関数の中で `await` を使うと、その処理が終わるまで待つ
-- ないと「結果まだ来てないのに次の処理に進む」状態になる
 
 ### try-catch
 - エラーが起きうる処理を `try` で囲む
 - 失敗したら `catch` ブロックが走る
-- これがないとサーバー全体がクラッシュすることも
 
 ### fetch
 - ブラウザ標準の通信機能
@@ -785,16 +798,36 @@ data.translation              ←
 ### イベントリスナー
 - 「特定のイベントで関数を実行」する仕組み
 - `addEventListener('イベント名', 関数)` で登録
-- 例：`'click'`, `'input'`, `'keydown'`
 
 ### DOM操作
 - HTMLの要素をJavaScriptで操作すること
 - `document.getElementById('id名')` で取得
 - `.textContent`, `.style.display`, `.value` などで操作
 
+### セマンティックタグ
+- `<header>`, `<main>`, `<footer>`, `<section>`, `<article>` など
+- 「意味」を持つタグ
+- `<div>` でも見た目は同じだが、SEO・アクセシビリティ・可読性で有利
+
+### クラスの複数持ち
+```html
+<div class="message in">
+<div class="bubble translation">
+```
+- スペース区切りで複数指定
+- CSS側で `.message.in` のように**組み合わせ**でスタイル指定可能
+
+### id と class の違い
+
+| | id | class |
+|---|---|---|
+| 用途 | **1ページに1個だけ**の識別 | **複数の要素**に同じスタイル |
+| JS取得 | `getElementById()` | `getElementsByClassName()` |
+| CSS指定 | `#id名` | `.class名` |
+
 ---
 
-## 5. 理解度チェック（自分用クイズ）
+## 6. 理解度チェック（自分用クイズ）
 
 ### server.js編
 
@@ -818,7 +851,6 @@ Anthropic APIへの認証が失敗して、翻訳エラーが出る。
 
 API通信は時間がかかる処理（数秒）。
 `await` なしだと、結果が返ってくる前に次の処理に進んでしまう。
-`response` が `undefined` のままで、`response.content[0].text` でエラー。
 
 `async` は「この関数の中で `await` を使うよ」という宣言。
 `await` を使うには、その関数が `async` である必要がある。
@@ -847,8 +879,6 @@ index.html の `fetch('/api/translate', ...)` も `fetch('/api/honyaku', ...)` �
 <summary>答え</summary>
 
 英訳の代わりに韓国語訳が返ってくるようになる。
-ただしClaudeの韓国語性能や、フロント側の表示も「ENGLISH」のままだったりするので、
-そこも合わせて変える必要が出てくる。
 
 これがプロンプトエンジニアリングの威力：
 **コードをほとんど変えずに、AIの振る舞いだけ変えられる**。
@@ -867,8 +897,6 @@ index.html の `fetch('/api/translate', ...)` も `fetch('/api/honyaku', ...)` �
 server.js側にそのエンドポイントが定義されていないため404エラー。
 画面に「翻訳に失敗しました」と表示される。
 
-server.js側の `app.post('/api/translate', ...)` も同じURLに変えれば動く。
-
 </details>
 
 #### 質問6
@@ -881,8 +909,6 @@ server.js側の `app.post('/api/translate', ...)` も同じURLに変えれば動
 `await` なしだと、`res` が Promise のまま次の `res.ok` の判定に進む。
 結果として正しい判定ができず、おかしな挙動になる。
 
-通信は時間がかかるので、結果を待たずに進むと値が空のままになる。
-
 </details>
 
 #### 質問7
@@ -893,8 +919,6 @@ server.js側の `app.post('/api/translate', ...)` も同じURLに変えれば動
 
 Enterキーを押したときに、ブラウザのデフォルト動作（改行）も実行されてしまう。
 結果として、送信は走るが入力欄にも改行が入って残ってしまう。
-
-UIとしては気持ち悪い動きになる。
 
 </details>
 
@@ -908,15 +932,71 @@ CSSアニメーション（フェードイン）が2回目以降再生されな�
 1回目の翻訳ではアニメーション付きで表示されるが、
 2回目以降は瞬時に切り替わるだけになる。
 
-機能としては動くが、視覚的な演出がなくなる。
+</details>
+
+### index.html HTML編
+
+#### 質問9
+`<div class="message in">` の `in` を `out` に変えたら何が起きる？
+
+<details>
+<summary>答え</summary>
+
+そのメッセージが**右寄せ**で表示される（ユーザーのメッセージ扱いになる）。
+また、アバターが右側に来る（`flex-direction: row-reverse` の効果）。
+
+CSSは `class="message"` で共通スタイル、`.message.in` と `.message.out` で個別調整してるため。
+
+</details>
+
+#### 質問10
+`<button class="btn" onclick="translateText()">` から `onclick` を消したらどうなる？
+
+<details>
+<summary>答え</summary>
+
+ボタンを押しても何も起きなくなる。
+
+ボタンとJavaScript関数の繋がりが切れるため、`translateText()` 関数が呼び出されない。
+代替手段としてJS側で `addEventListener('click', translateText)` を設定すれば動作する。
+
+</details>
+
+#### 質問11
+`id="jpInput"` を `id="japaneseInput"` に変えたら、何を一緒に変えないと壊れる？
+
+<details>
+<summary>答え</summary>
+
+JavaScript側の以下を全部変える必要がある：
+- `document.getElementById('jpInput')`（2箇所）
+- `const ta = document.getElementById('jpInput')`
+
+`id` はHTMLとJavaScriptの**橋渡し**。
+片方だけ変えると JavaScript が要素を見つけられず、エラーになる。
+
+</details>
+
+#### 質問12
+`<header>` を `<div>` に変えたら、見た目は変わる？
+
+<details>
+<summary>答え</summary>
+
+CSS が `header { ... }` で指定されているため、**そのスタイルが効かなくなる**。
+
+見た目は崩れる：レイアウト・色・サイズが初期状態になる。
+
+ただし `<div class="header">` のようにクラスで指定し、CSS も `.header { ... }` に変えれば、同じ見た目を再現できる。
+
+セマンティックタグを使うのは**意味の伝達**のためで、見た目は CSS 次第。
 
 </details>
 
 ---
 
-## 6. 今後追加予定
+## 7. 今後追加予定
 
-- [ ] index.html HTML部分の解説（骨組み）
 - [ ] index.html CSS部分の解説（見た目）
 - [ ] package.json の解説（依存関係管理）
 - [ ] git の基本操作まとめ
