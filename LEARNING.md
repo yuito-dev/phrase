@@ -15,6 +15,7 @@ Claude Codeに書かせたコードを「自分で説明できる」レベルま
 6. [重要な概念まとめ](#6-重要な概念まとめ)
 7. [理解度チェック（自分用クイズ）](#7-理解度チェック自分用クイズ)
 8. [今後追加予定](#8-今後追加予定)
+9. [プロジェクト履歴・引継ぎ情報](#9-プロジェクト履歴引継ぎ情報)
 
 ---
 
@@ -429,8 +430,6 @@ onclick="..."    ←→   function translateText()
 | プロパティ | 何を |
 | 値 | どう設定するか |
 
----
-
 ### ブロック1：リセットCSS
 
 ```css
@@ -441,49 +440,10 @@ onclick="..."    ←→   function translateText()
 }
 ```
 
-#### `*` セレクタ
-すべての要素を指す（ワイルドカード）。
+`*` セレクタですべての要素を指定。
+`box-sizing: border-box` でpadding/borderを内側に含む計算に。
 
-#### `*::before, *::after`
-疑似要素（::で始まる）。要素の前後に擬似的な要素を作る機能。
-
-#### なぜリセットが必要？
-ブラウザごとにデフォルトスタイルが違うため。
-最初に全部リセットして、ゼロから組み立てる。
-
-#### `box-sizing: border-box;`
-
-ボックスモデルの計算方法を変える重要プロパティ。
-
-**通常（content-box）**：
-- width: 100pxの場合、padding/borderが外側に追加されて広がる
-
-**border-box**：
-- width: 100pxの場合、padding/borderは内側に含まれ、合計100pxのまま
-
-直感的に幅を指定できるため、現代CSSではほぼ必須。
-
-#### マージンとパディング
-
-```
-┌─ margin（外側） ─────────────┐
-│  ┌─ border ────────────────┐ │
-│  │  ┌─ padding（内側） ──┐ │ │
-│  │  │      内容          │ │ │
-│  │  └────────────────────┘ │ │
-│  └────────────────────────┘ │
-└────────────────────────────┘
-```
-
-| 用語 | 場所 |
-|---|---|
-| margin | 要素の外側の余白 |
-| border | 枠線 |
-| padding | 要素の内側の余白 |
-
----
-
-### ブロック2：CSS変数（カスタムプロパティ）
+### ブロック2：CSS変数
 
 ```css
 :root {
@@ -501,647 +461,38 @@ onclick="..."    ←→   function translateText()
 }
 ```
 
-#### `:root` とは
-HTMLの最上位要素（`<html>`）を指す疑似クラス。
-ここで定義した変数はページ全体で使える。
+`var(--bg)` で呼び出し。1箇所変えれば全部反映。
 
-#### CSS変数の書き方
+### ブロック3〜12（簡略）
 
-```css
---変数名: 値;
-```
-
-使い方：
-```css
-body {
-  background: var(--bg);
-  color: var(--text);
-}
-```
-
-#### なぜ変数を使うか
-
-修正が圧倒的に楽。
-変数なしだと色を変えたい時に100箇所書き換える必要があるが、
-変数ありなら `:root` の1箇所変えれば全部反映される。
-
-#### phraseの色設計
-
-| 変数 | 値 | 用途 |
+| ブロック | 内容 | 主なプロパティ |
 |---|---|---|
-| --bg | #0C0C0C | 背景（ほぼ黒） |
-| --surface | #141414 | 一段明るい黒（入力欄など） |
-| --surface-2 | #1C1C1C | さらに明るい黒（吹き出し） |
-| --gold | #C8A84B | メインの金色 |
-| --gold-dark | #8A7230 | 暗めの金色 |
-| --gold-subtle | rgba(200,168,75,0.09) | 透明な金色 |
-| --gold-border | rgba(200,168,75,0.22) | 半透明の金色 |
-| --text | #EDE9DF | 文字色（オフホワイト） |
-| --text-muted | #6B6860 | 薄い文字 |
-| --border | #222220 | 枠線色 |
-| --divider | #2C2C2A | 区切り線 |
+| 3. レイアウト基礎 | html/body | flex, 100dvh, overflow:hidden |
+| 4. ヘッダー | header | flex, align-items, justify-content |
+| 5. ロゴ | .logo | font-family, letter-spacing |
+| 6. チャットパネル | .chat-panel | flex:1, overflow-y, gap |
+| 7. メッセージ吹き出し | .message, .bubble | row-reverse, border-radius |
+| 8. 翻訳結果 | .bubble.translation | text-transform |
+| 9. 入力パネル | .input-panel | box-shadow |
+| 10. textarea | textarea | resize, outline, transition |
+| 11. ボタン | .btn | cursor, opacity, :hover, :active |
+| 12. 結果＋アニメ | .result-en, @keyframes | animation, transform |
 
-#### 色の指定方法
+### 重要な技術ポイント
 
-**16進数表記** `#C8A84B`
-- # + 6桁の英数字
-- 2桁ずつR/G/Bの値（00〜FF）
+- **Flexbox**：`display: flex` + `flex-direction` + `align-items` + `justify-content` でレイアウト
+- **border-radius: 50%**：正方形を円に
+- **border-radius: 4px 14px 14px 14px**：各角を個別指定（LINE風吹き出しの「しっぽ」）
+- **box-shadow: 0 -14px 28px ...**：影で立体感
+- **@keyframes + animation**：カスタムアニメーション
+- **transform: translateY()**：パフォーマンス良い移動（GPU使用）
 
-**rgba()** `rgba(200, 168, 75, 0.09)`
-- R, G, B, A（透明度 0〜1）
-- 透明度を付けたい時に使う
+### 疑似クラス・疑似要素
 
-#### 黒の濃淡で奥行きを出すテクニック
-
-```
---bg:        #0C0C0C  ← 一番暗い
---surface:   #141414  ← 少し明るい
---surface-2: #1C1C1C  ← さらに明るい
-```
-
-完全な黒じゃなく、わずかな明度差を使うことで：
-- 奥行きが出る
-- 目が疲れない
-- 高級感が出る
-
-Discord等で多用されるダークモードのプロのテクニック。
-
----
-
-### ブロック3：レイアウト基礎（html, body）
-
-```css
-html, body {
-  height: 100%;
-}
-
-body {
-  font-family: 'Inter Tight', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  display: flex;
-  flex-direction: column;
-  height: 100dvh;
-  overflow: hidden;
-}
-```
-
-#### `font-family: 'Inter Tight', sans-serif;`
-
-カンマ区切りでフォールバック指定。
-1. まず Inter Tight を試す
-2. なければ sans-serif
-
-#### Flexbox入門
-
-```css
-display: flex;
-flex-direction: column;
-```
-
-| プロパティ | 意味 |
+| 種類 | 例 |
 |---|---|
-| display: flex | この要素の中身をflexレイアウトで配置 |
-| flex-direction: column | 縦方向に並べる |
-| flex-direction: row | 横方向に並べる（デフォルト） |
-
-#### `height: 100dvh;`
-
-`dvh` = Dynamic Viewport Height。
-`vh` との違い：スマホでアドレスバーが現れたり消えたりする時に動的に追従する。
-
-#### `overflow: hidden;`
-
-はみ出した部分を非表示にする。
-ここでは「ページ全体がスクロールしないように」する設定。
-
----
-
-### ブロック4：ヘッダー部分
-
-```css
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 22px;
-  height: 50px;
-  border-bottom: 1px solid var(--border);
-  flex-shrink: 0;
-}
-```
-
-#### Flexboxの配置プロパティ
-
-| プロパティ | 意味 |
-|---|---|
-| align-items: center | 縦方向に中央揃え |
-| justify-content: space-between | 左右両端に配置 |
-
-#### `padding: 0 22px;`
-
-ショートハンド記法：
-```css
-padding: 上 右 下 左;    /* 4つ */
-padding: 上下 左右;     /* 2つ */
-padding: すべて;        /* 1つ */
-```
-
-`padding: 0 22px;` = 上下0、左右22px
-
-#### `border-bottom: 1px solid var(--border);`
-
-境界線のショートハンド：
-```css
-border-bottom: 太さ スタイル 色;
-```
-
-#### `flex-shrink: 0;`
-
-Flexboxアイテムの縮小を防ぐ。
-ヘッダーは常に50pxの高さで固定したいから0に。
-
----
-
-### ブロック5：ロゴのスタイル
-
-```css
-.logo {
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 24px;
-  font-weight: 300;
-  letter-spacing: 0.18em;
-  color: var(--gold);
-}
-
-.logo span { font-style: italic; }
-```
-
-#### フォント関連プロパティ
-
-| プロパティ | 意味 |
-|---|---|
-| font-family | フォントの種類 |
-| font-size | 文字サイズ |
-| font-weight | 文字の太さ（100〜900、400が普通、700が太字） |
-| letter-spacing | 文字間隔 |
-| font-style: italic | 斜体 |
-
-#### `em` という単位
-
-`0.18em` = 現在のフォントサイズの18%
-
-| 単位 | 意味 |
-|---|---|
-| px | ピクセル（絶対値） |
-| em | 親要素のフォントサイズ基準 |
-| rem | rootのフォントサイズ基準 |
-| % | 親要素のサイズ基準 |
-
-#### `.logo span` 子孫セレクタ
-
-「`.logo` の中の `span` 要素」を指定。
-HTML側で `<div class="logo">phr<span>a</span>se</div>` の `a` だけ斜体になる。
-
----
-
-### ブロック6：チャットパネル
-
-```css
-.chat-panel {
-  flex: 1;
-  overflow-y: auto;
-  padding: 16px 20px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  scrollbar-width: none;
-}
-
-.chat-panel::-webkit-scrollbar { display: none; }
-```
-
-#### `flex: 1;`
-
-Flexbox内で「残りスペースを全部もらう」設定。
-ヘッダーと入力パネル以外の残り全部をチャットパネルが占める。
-
-#### `overflow-y: auto;`
-
-縦方向のスクロール：
-- auto：必要な時だけスクロールバー表示
-- scroll：常に表示
-- hidden：スクロール不可
-
-#### `gap: 12px;`
-
-Flexboxアイテム間の隙間。
-margin で個別指定するよりシンプル。
-
-#### スクロールバーを隠す技
-
-```css
-scrollbar-width: none;                              /* Firefox用 */
-.chat-panel::-webkit-scrollbar { display: none; }   /* Chrome系用 */
-```
-
-ブラウザごとに別の指定が必要。
-
-#### `-webkit-` プレフィックス
-
-Chrome系ブラウザ専用の接頭辞（ベンダープレフィックス）。
-
----
-
-### ブロック7：メッセージの吹き出し
-
-```css
-.message {
-  display: flex;
-  align-items: flex-end;
-  gap: 9px;
-}
-
-.message.out { flex-direction: row-reverse; }
-
-.avatar {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  border: 1px solid var(--border);
-  background: var(--surface-2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  font-family: 'Cormorant Garamond', serif;
-  font-size: 10px;
-  color: var(--gold);
-}
-
-.bubble-col {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  max-width: 72%;
-}
-
-.message.out .bubble-col { align-items: flex-end; }
-
-.bubble {
-  padding: 9px 13px;
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.message.in .bubble {
-  background: var(--surface-2);
-  border-radius: 4px 14px 14px 14px;
-  color: var(--text);
-}
-
-.message.out .bubble {
-  background: var(--gold);
-  color: #0C0C0C;
-  border-radius: 14px 4px 14px 14px;
-  font-weight: 500;
-}
-```
-
-#### `.message.out` 組み合わせセレクタ
-
-「`message` クラスかつ `out` クラスを持つ要素」。
-`row-reverse` で横方向の並びを反転。
-
-#### `border-radius: 50%;`
-
-正方形を完全な円にする。
-アバターアイコンが丸くなる仕組み。
-
-#### `border-radius: 4px 14px 14px 14px;`
-
-4つの値で各角を個別指定：
-```
-border-radius: 左上 右上 右下 左下;
-```
-
-- in：左上だけ4px、他14px → 左上が尖った吹き出し
-- out：右上だけ4px、他14px → 右上が尖った吹き出し
-
-LINEの吹き出しの「しっぽ風デザイン」を再現。
-
-#### `max-width: 72%;`
-
-吹き出しの最大幅。画面の72%まで広がる。
-
-#### `line-height: 1.6;`
-
-行の高さ。文字サイズの1.6倍。
-
----
-
-### ブロック8：翻訳結果の特別な吹き出し
-
-```css
-.bubble.translation {
-  background: var(--gold-subtle);
-  border: 1px solid var(--gold-border);
-  border-radius: 4px 14px 14px 14px;
-  padding: 10px 14px;
-}
-
-.bubble .en-label {
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-  margin-bottom: 4px;
-}
-
-.bubble .en-result {
-  font-family: 'Inter Tight', sans-serif;
-  font-size: 19px;
-  color: var(--gold);
-  line-height: 1.4;
-}
-
-.ts {
-  font-size: 10px;
-  color: var(--text-muted);
-  padding: 0 2px;
-}
-```
-
-#### `.bubble.translation`
-
-「`bubble` かつ `translation` クラスを持つ要素」。
-半透明の金色背景＋金色の枠線で特別感。
-
-#### `text-transform: uppercase;`
-
-文字を強制的に大文字にする。
-HTMLを変えずに見た目だけ変えられる。
-
----
-
-### ブロック9：入力パネル
-
-```css
-.input-panel {
-  flex-shrink: 0;
-  border-top: 1px solid var(--divider);
-  box-shadow: 0 -14px 28px rgba(0, 0, 0, 0.55);
-  padding: 14px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  background: var(--bg);
-}
-
-.panel-label {
-  font-size: 10px;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
-  color: var(--text-muted);
-}
-
-.input-row {
-  display: flex;
-  gap: 9px;
-  align-items: flex-end;
-}
-```
-
-#### `box-shadow: 0 -14px 28px rgba(0, 0, 0, 0.55);`
-
-影を付ける：
-```css
-box-shadow: 横ずれ 縦ずれ ぼかし 色;
-```
-
-- 0：横ずれなし
-- -14px：上に14pxずれる（マイナスで上方向）
-- 28px：ぼかしの強さ
-- rgba(0,0,0,0.55)：55%の不透明度の黒
-
-「入力パネルがチャットの上に浮いてる」立体感を演出。
-
-#### `padding: 14px 20px 20px;`
-
-3つの値の場合：上 左右 下
-
----
-
-### ブロック10：textarea（入力欄）
-
-```css
-textarea {
-  flex: 1;
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 11px;
-  color: var(--text);
-  font-family: 'Inter Tight', sans-serif;
-  font-size: 15px;
-  line-height: 1.6;
-  padding: 10px 14px;
-  resize: none;
-  height: 46px;
-  max-height: 100px;
-  outline: none;
-  transition: border-color 0.2s;
-}
-
-textarea::placeholder { color: var(--text-muted); }
-textarea:focus { border-color: var(--gold-dark); }
-```
-
-#### `resize: none;`
-
-textareaのユーザーリサイズを禁止。
-JavaScript側で自動調整するため。
-
-#### `outline: none;`
-
-フォーカス時のブラウザデフォルトの青枠を消す。
-
-#### `transition: border-color 0.2s;`
-
-アニメーション設定：
-```css
-transition: プロパティ 時間 動きの種類;
-```
-
-border-colorが変化する時、0.2秒かけて滑らかに変化。
-
-#### 疑似要素・疑似クラス
-
-| | 種類 | 例 |
-|---|---|---|
-| `::placeholder` | 疑似要素 | プレースホルダーのスタイル |
-| `:focus` | 疑似クラス | フォーカス中の状態 |
-
-疑似クラス一覧：
-| 疑似クラス | タイミング |
-|---|---|
-| :hover | マウスが乗ってる |
-| :focus | フォーカス中 |
-| :active | クリック中 |
-| :disabled | 無効化されてる |
-
----
-
-### ブロック11：ボタンのスタイル
-
-```css
-.btn {
-  flex-shrink: 0;
-  height: 46px;
-  padding: 0 20px;
-  background: var(--gold);
-  color: #0C0C0C;
-  border: none;
-  border-radius: 11px;
-  font-family: 'Inter Tight', sans-serif;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.06em;
-  cursor: pointer;
-  transition: opacity 0.15s;
-  white-space: nowrap;
-}
-
-.btn:hover  { opacity: 0.82; }
-.btn:active { opacity: 0.65; }
-```
-
-#### `cursor: pointer;`
-
-マウスホバー時のカーソルを指マークに。
-「クリックできるよ」と視覚的に伝える。
-
-#### `white-space: nowrap;`
-
-テキストを折り返さない設定。
-
-#### `opacity: 0.82;`
-
-透明度。0.82 = 82%の不透明度。
-ホバー時にちょっと透明にして「反応した」感を出す。
-
----
-
-### ブロック12：結果表示エリアとアニメーション
-
-```css
-.result-area {
-  background: var(--gold-subtle);
-  border: 1px solid var(--gold-border);
-  border-radius: 11px;
-  padding: 10px 16px;
-  min-height: 44px;
-  display: flex;
-  align-items: center;
-}
-
-.result-placeholder {
-  font-size: 13px;
-  color: var(--text-muted);
-}
-
-.result-en {
-  font-family: 'Inter Tight', sans-serif;
-  font-size: 22px;
-  color: var(--gold);
-  line-height: 1.35;
-  display: none;
-  animation: fadeUp 0.3s ease both;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-```
-
-#### `min-height: 44px;`
-
-最小の高さを44pxに固定。
-中身が空でも高さが潰れない。
-
-#### `display: none;`
-
-最初は非表示。
-英訳結果が来たらJavaScriptで `display: block` に変更。
-
-#### CSS アニメーション
-
-```css
-animation: fadeUp 0.3s ease both;
-```
-
-ショートハンド：
-```css
-animation: 名前 時間 動きの種類 適用方法;
-```
-
-- fadeUp：下で定義したアニメーション名
-- 0.3s：0.3秒
-- ease：ゆっくり始まってゆっくり終わる
-- both：開始前と終了後の状態を維持
-
-#### `@keyframes` でアニメーション定義
-
-```css
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(6px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-```
-
-| 部分 | 意味 |
-|---|---|
-| from | アニメーション開始時の状態 |
-| to | アニメーション終了時の状態 |
-| opacity: 0 → 1 | 透明から不透明へ |
-| translateY(6px) → translateY(0) | 下から上にスライド |
-
-「ふわっと下から浮き上がる」フェードイン効果。
-
-#### `transform: translateY(6px);`
-
-変形プロパティで位置を変える。
-translateY = Y軸（縦方向）に移動。
-
-margin や top よりパフォーマンスが良い（GPU使用）。
-
----
-
-### CSS全体のまとめ
-
-```
-【リセット】
-1. *セレクタで全要素の余白をゼロに
-
-【デザインシステム】
-2. :rootでCSS変数を定義（色のパレット）
-
-【レイアウト】
-3. body / .main / .chat-panel / .input-panel をFlexboxで縦並び
-4. .chat-panel に flex:1 で残り全部を占めさせる
-
-【コンポーネント】
-5. .header：横並び、両端配置
-6. .message：左右で配置を反転（in/out）
-7. .bubble：吹き出しの形（角の丸み差で「しっぽ」表現）
-8. textarea / .btn：ダーク背景に金色アクセント
-9. .result-area：フェードインアニメーション付き
-
-【動きの仕掛け】
-10. :hover / :focus でインタラクション表現
-11. @keyframes でカスタムアニメーション
-12. transition で滑らかな変化
-```
+| 疑似クラス（:） | `:hover`, `:focus`, `:active`, `:disabled` |
+| 疑似要素（::） | `::before`, `::after`, `::placeholder` |
 
 ---
 
@@ -1204,7 +555,7 @@ Anthropic APIへの認証が失敗して、翻訳エラーが出る。
 </details>
 
 #### 質問2
-`async` と `await` はなぜ必要？なくしたらどうなる？
+`async` と `await` はなぜ必要？
 
 <details>
 <summary>答え</summary>
@@ -1212,21 +563,16 @@ Anthropic APIへの認証が失敗して、翻訳エラーが出る。
 API通信は時間がかかる処理（数秒）。
 await なしだと、結果が返ってくる前に次の処理に進んでしまう。
 
-async は「この関数の中で await を使うよ」という宣言。
-
 </details>
 
 #### 質問3
-エンドポイントのURLを `/api/translate` から `/api/honyaku` に変えたら、どこを変えれば動く？
+エンドポイントのURLを `/api/honyaku` に変えたら、どこを変えれば動く？
 
 <details>
 <summary>答え</summary>
 
-server.js の `app.post('/api/translate', ...)` を `app.post('/api/honyaku', ...)` に変える。
-
-加えて、index.html の `fetch('/api/translate', ...)` も同じURLに変える。
-
-サーバーとフロントの両方を変える必要がある。
+server.jsとindex.html両方を変える必要がある。
+サーバー側とフロント側の整合性が必要。
 
 </details>
 
@@ -1236,162 +582,135 @@ server.js の `app.post('/api/translate', ...)` を `app.post('/api/honyaku', ..
 <details>
 <summary>答え</summary>
 
-英訳の代わりに韓国語訳が返ってくるようになる。
-
-これがプロンプトエンジニアリングの威力：
-コードをほとんど変えずに、AIの振る舞いだけ変えられる。
+英訳の代わりに韓国語訳が返ってくる。
+プロンプトエンジニアリングでAIの振る舞いだけ変えられる。
 
 </details>
 
 ### index.html JavaScript編
 
 #### 質問5
-`fetch('/api/translate')` の URL を `/api/honyaku` に変えたら何が起きる？
+`fetch('/api/honyaku')` に変えたら？
 
 <details>
 <summary>答え</summary>
 
-ブラウザは /api/honyaku にリクエストを送るが、
-server.js側にそのエンドポイントが定義されていないため404エラー。
-画面に「翻訳に失敗しました」と表示される。
+server.js側にエンドポイントがないため404エラー。
+「翻訳に失敗しました」と表示される。
 
 </details>
 
 #### 質問6
-`await` を消したらどうなる？
+`await` を消したら？
 
 <details>
 <summary>答え</summary>
 
-fetch() は Promise を返す。
-await なしだと、res が Promise のまま次の res.ok の判定に進む。
-結果として正しい判定ができず、おかしな挙動になる。
+fetch() はPromiseを返すため、resがPromiseのまま次の判定に進む。
+おかしな挙動になる。
 
 </details>
 
 #### 質問7
-`e.preventDefault()` がないとどうなる？
+`e.preventDefault()` がないと？
 
 <details>
 <summary>答え</summary>
 
-Enterキーを押したときに、ブラウザのデフォルト動作（改行）も実行されてしまう。
-結果として、送信は走るが入力欄にも改行が入って残ってしまう。
+Enterキーの改行も実行される。
+送信と同時に入力欄に改行が残る。
 
 </details>
 
 #### 質問8
-`void resultEn.offsetWidth;` を消したらどうなる？
+`void resultEn.offsetWidth;` を消したら？
 
 <details>
 <summary>答え</summary>
 
-CSSアニメーション（フェードイン）が2回目以降再生されなくなる。
-1回目の翻訳ではアニメーション付きで表示されるが、
-2回目以降は瞬時に切り替わるだけになる。
+2回目以降のアニメーションが再生されない。
+瞬時に切り替わるだけになる。
 
 </details>
 
 ### index.html HTML編
 
 #### 質問9
-`<div class="message in">` の `in` を `out` に変えたら何が起きる？
+`<div class="message in">` の `in` を `out` に変えたら？
 
 <details>
 <summary>答え</summary>
 
-そのメッセージが右寄せで表示される（ユーザーのメッセージ扱いになる）。
-また、アバターが右側に来る（`flex-direction: row-reverse` の効果）。
+右寄せで表示される。アバターが右側に来る。
+`flex-direction: row-reverse` の効果。
 
 </details>
 
 #### 質問10
-`<button class="btn" onclick="translateText()">` から `onclick` を消したらどうなる？
+`onclick="translateText()"` を消したら？
 
 <details>
 <summary>答え</summary>
 
-ボタンを押しても何も起きなくなる。
-ボタンとJavaScript関数の繋がりが切れるため。
+ボタンを押しても何も起きない。
+JS関数の繋がりが切れる。
 
 </details>
 
 #### 質問11
-`id="jpInput"` を `id="japaneseInput"` に変えたら、何を一緒に変えないと壊れる？
+`id="jpInput"` を変えたら、何を一緒に変えないと壊れる？
 
 <details>
 <summary>答え</summary>
 
-JavaScript側の以下を全部変える必要がある：
-- `document.getElementById('jpInput')`（複数箇所）
-- `const ta = document.getElementById('jpInput')`
-
-`id` はHTMLとJavaScriptの橋渡し。
-片方だけ変えると JavaScript が要素を見つけられず、エラーになる。
+JavaScript側の`document.getElementById('jpInput')`を全部変える必要がある。
+HTMLとJSの橋渡し。
 
 </details>
 
 #### 質問12
-`<header>` を `<div>` に変えたら、見た目は変わる？
+`<header>` を `<div>` に変えたら見た目は変わる？
 
 <details>
 <summary>答え</summary>
 
-CSS が `header { ... }` で指定されているため、そのスタイルが効かなくなる。
-見た目は崩れる：レイアウト・色・サイズが初期状態になる。
-
-ただし `<div class="header">` のようにクラスで指定し、CSS も `.header { ... }` に変えれば、同じ見た目を再現できる。
+CSSが`header { ... }`で指定されているため、スタイルが効かなくなる。
+`.header`クラス指定に変えれば再現可能。
 
 </details>
 
 ### index.html CSS編
 
 #### 質問13
-`box-sizing: border-box;` を消したらどうなる？
+`box-sizing: border-box;` を消したら？
 
 <details>
 <summary>答え</summary>
 
-要素の幅計算が変わる。
-width: 100px の要素に padding: 20px を付けると、実際の幅は 140px（100 + 20×2）になる。
-
-border-box の場合は100pxのまま（paddingが内側に含まれる）。
-
-レイアウトが崩れる原因になる。
+width: 100px + padding: 20px の要素が140pxに広がる。
+レイアウトが崩れる原因に。
 
 </details>
 
 #### 質問14
-`--gold: #C8A84B;` を `--gold: #FF0000;` に変えたら、何箇所が変わる？
+`--gold` の値を変えたら何箇所変わる？
 
 <details>
 <summary>答え</summary>
 
-`var(--gold)` を使っている全箇所が変わる。
-
-phraseでは：
-- .logo（ロゴの色）
-- .btn（ボタンの背景）
-- .message.out .bubble（自分の吹き出し）
-- .bubble .en-result（英訳結果の文字色）
-- .avatar（アバターの文字色）
-など多数。
-
-これがCSS変数の威力：1箇所変えれば全部反映される。
+var(--gold)を使ってる全箇所が変わる。
+ロゴ、ボタン、吹き出し、英訳結果、アバター等多数。
 
 </details>
 
 #### 質問15
-`flex-direction: column` と `flex-direction: row` の違いは？
+`flex-direction: column` と `row` の違いは？
 
 <details>
 <summary>答え</summary>
 
-- column：縦方向に並べる（上から下へ）
-- row：横方向に並べる（左から右へ、デフォルト）
-
-phraseのbody要素は column で、header → main → footer の順に縦に並ぶ。
-header の中は row（デフォルト）で、ロゴとタグが横並び。
+column：縦並び
+row：横並び（デフォルト）
 
 </details>
 
@@ -1401,11 +720,9 @@ header の中は row（デフォルト）で、ロゴとタグが横並び。
 <details>
 <summary>答え</summary>
 
-- :root：HTMLの最上位要素（`<html>`）を指す疑似クラス
-- body：`<body>` タグそのもの
-
-CSS変数を :root で定義するのが慣習。
-理由：ページ全体の最上位だから、どこからでも継承できる。
+:root：HTMLの最上位要素（<html>）の疑似クラス
+body：<body>タグそのもの
+CSS変数定義は:rootが慣習。
 
 </details>
 
@@ -1415,28 +732,18 @@ CSS変数を :root で定義するのが慣習。
 <details>
 <summary>答え</summary>
 
-border-color（枠線の色）が変化する時、0.2秒かけて滑らかに変化する。
-
-phraseでは、textareaの枠線が :focus で --gold-dark に変わる時、ふわっと色が変わるアニメーションが付く。
-
-これがないと、瞬時にカクッと色が変わる。
+border-colorが変化する時、0.2秒かけて滑らかに変化。
+:focusで色が変わる時のアニメーション。
 
 </details>
 
 #### 質問18
-`@keyframes fadeUp { from {...} to {...} }` で何が起きる？
+`@keyframes fadeUp` で何が起きる？
 
 <details>
 <summary>答え</summary>
 
-fadeUp という名前のアニメーションを定義してる。
-
-phrase では：
-- from：透明＋6px下に位置
-- to：不透明＋元の位置
-
-これを .result-en の animation プロパティで呼び出すと、
-英訳結果が「ふわっと下から浮き上がる」フェードイン効果になる。
+「ふわっと下から浮き上がる」フェードイン効果のアニメーションを定義してる。
 
 </details>
 
@@ -1448,6 +755,277 @@ phrase では：
 - [ ] git の基本操作まとめ
 - [ ] 機能追加の記録（メッセージ履歴、単語ピックアップなど）
 - [ ] エラー対応の記録（学習ログ）
+
+---
+
+## 9. プロジェクト履歴・引継ぎ情報
+
+**このセクションは、新しいClaudeチャットに引き継ぐ際の情報源。**
+**新チャットの最初に「このLEARNING.mdの第9章を全部読んで」と指示すれば、文脈が復元できる。**
+
+---
+
+### 9-1. ゆいとという人物
+
+#### 基本情報
+- 名前：ゆいと（GitHub: yuito-dev）
+- 大学生（IT系志望）、ややイケメン
+- WSL ユーザー名：`yuito`
+- 環境：Windows + ノートPC + デスクトップ（ゲーミング）+ iPhone
+
+#### 学習歴
+- C言語とLinuxは大学の授業で履修した程度
+- HTML/CSS基礎あり、Progate学習中
+- JavaScript / Node.js / Express は phrase で初体験
+- Git / GitHub も phrase でほぼ初体験
+
+#### 強み（重要：飽き性って自称するけど実は粘り強い）
+- ミスっても折れない
+- 詰まっても聞きながら進む
+- 「学習したい」「コード理解したい」と自分から言える
+- 流出事故時もパニクらず冷静対応した
+- 完成までやり切る性質ある
+
+#### 飽き性自覚あり
+- 退屈な作業は続かない
+- だから飽きる前に区切る・成果出すのが鉄則
+- ただし、燃えてる時はガンガン進む
+
+#### つまずきパターン
+新チャットの俺はこれを知らないと適切なサポートできない：
+
+1. **概念の混同**
+   - HTML / CSS / JavaScript の区別が曖昧になることがある
+   - ファイル名の認識が混同しがち（LEARNING.md と CSS.css とか）
+   - 選択肢の番号（C）とプログラミング言語のCを混同したことあり
+
+2. **環境系の混乱**
+   - WSL / VS Code / ターミナルの位置関係で混乱
+   - 複数ターミナル開いた時に混乱
+   - Ctrl+C・Ctrl+Shift+R・Ctrl+End などのショートカット案内が毎回必要
+   - 「Ctrl+Fで検索」みたいな具体的操作指示が必要
+
+3. **コピペミス**
+   - 過去にindex.htmlの`<script>`タグをコピペで壊した（git checkoutで復元）
+   - そのため`<!DOCTYPE html>S`という余計な「S」が冒頭に残ってる
+
+---
+
+### 9-2. このプロジェクトの基本ルール（厳守）
+
+#### トーン・スタイル
+- 砕けた口調、断定的、率直
+- 「〜です・ます」と「〜だ・である」混在OK
+- **ヨイショ禁止、忖度禁止、誘導禁止**
+- ゆいとが間違ってたら「それは違う」「そこは誇張」とハッキリ言う
+- 良ければ理由付きで肯定する
+- 「正直に言うと」「ここは厳しい現実」など本音の前置きを使う
+
+#### 進め方
+- 1ラリー＝3手分くらいで進める
+- 不要な前置き・繰り返し説明を省く
+- 選択肢を出す時はマークダウン表で比較
+- 重要箇所は太字で強調
+- 迷ったら推奨を理由付きで明示
+
+#### ツール使い分け
+- **このチャット（俺）**：戦略・コード理解・判断相談・学習サポート
+- **Claude Code（ターミナル）**：実装・ファイル編集・git操作
+
+---
+
+### 9-3. プロジェクトの位置づけ
+
+#### プロジェクト：phrase
+英語学習×AIのキーボード拡張系アプリ。
+日本語を打つとAIが英訳を提案、夜のロック画面で復習通知が届く構想。
+
+#### 動機
+ゆいと自身が英語学習続かなかったから、日常侵食型を作りたい。
+
+#### マインドセット
+- 収益化は副産物
+- 主目的：**学習＋形に残す＋少し普及＋改善経験＋就活活用**
+- Web版から始める（iOSはMac必須で断念）
+- Chrome拡張化も将来検討
+
+#### ターゲット層
+- 第一：英語を話せるようになりたいが続かない大学生〜若手社会人（20-30歳）
+  - TOEIC勉強続かない、洋楽・海外ドラマ好き、SNS常用、英語アプリ三日坊主経験あり
+- 第二：TOEICが必要な就活生・転職層
+
+#### 競合分析
+- 直接競合：日常SNS入力時に英訳提案するアプリは日本にメジャー製品なし
+- 間接競合：Speak、Duolingo、ELSA、スピークバディ、スタディサプリ、DeepL、ChatGPT
+- 差別化軸：「**アプリを開かなくても英語に触れる**」日常侵食型
+
+---
+
+### 9-4. 完了済み事項
+
+#### 環境構築
+- WSL Ubuntu / Node.js / VS Code+WSL拡張
+- Git / GitHub (yuito-dev) / SSH連携
+- phraseリポジトリ作成・clone・push成功
+- Claude Code (v2.1.121) 起動・認証成功
+- Anthropic APIキー取得（**1回流出事故あり→Revoke→新キーで復旧**）
+- $20 クレジット購入済（1年有効）
+
+#### 実装
+- **index.html**：ダーク+ゴールドのLINE風UI完成
+  - HTML：header / chat-panel（**サンプル3メッセージ固定**）/ input-panel
+  - CSS：CSS変数、Flexbox、@keyframesアニメーション
+  - JavaScript：translateText() でfetch経由API呼び出し
+- **server.js**：Express + Anthropic SDK
+- モデル：`claude-haiku-4-5-20251001`
+- エンドポイント：`/api/translate`
+- **.env / .gitignore**：APIキー安全管理
+- 本物のClaude APIで日英翻訳が動作中
+
+#### 起動方法
+```bash
+cd ~/projects/phrase
+node server.js
+# → http://localhost:3000
+```
+
+#### 学習成果
+- LEARNING.md（このファイル）作成・GitHub公開
+- phraseの全コード解説完了（server.js、HTML、CSS、JavaScript）
+- 1472行・36.6KB
+
+---
+
+### 9-5. 過去の重大事件と教訓
+
+#### 事件1：APIキー流出事故
+- ターミナルで `cat .env` 実行 → スクショに含まれてチャットに送信
+- 即対応：Revoke → 新キー発行 → .env書き換え → サーバー再起動 → 復旧
+- 教訓：
+  - `cat .env` を絶対やらない
+  - 確認は `head -c 30 .env` で先頭だけ
+  - 俺ももっと早く警告すべきだった（反省）
+
+#### 事件2：index.html破損
+- コピペミスで`<script>`タグが壊れた
+- `git checkout HEAD -- index.html` で復元
+- 教訓：git push しておけば最悪復元可能
+
+#### 事件3：WSL接続切断
+- 何度か起きた
+- 対処：`wsl --shutdown` → 30秒待つ → VS Code再起動
+
+#### 事件4：EADDRINUSE エラー
+- ポート3000が複数プロセスで重複
+- 対処：`pkill -f "node server.js"` で全停止
+
+---
+
+### 9-6. やらないことリスト（過去に検討して却下）
+
+| 案 | 却下理由 |
+|---|---|
+| iOSアプリ化 | Macが必須、現環境ではビルド不可 |
+| ブラウザから直接API叩く | セキュリティ（APIキー流出）でNG |
+| `<script>onclick="..."`スタイル | 古い書き方、addEventListenerが主流（ただし現状の実装は古いまま、リファクタは保留） |
+
+---
+
+### 9-7. 今後の構想（優先度順）
+
+#### Phase 1：Web版MVP完成（直近）
+- メッセージ履歴機能（チャット風に蓄積。現在は固定3メッセージのみ）
+- 3単語ピックアップ機能（AIが英訳から重要単語3つ抽出）
+- 学習プラン選択（TOEIC頻出/英検頻出/大学受験頻出）
+- Web Push通知（夜の復習リマインド）
+- デプロイ（Vercel等で誰でもアクセス可能に）
+
+#### Phase 2：Chrome拡張版
+- 各種SNS入力欄を検知してインライン英訳サジェスト
+- 復習通知をChrome通知で
+- Chrome Web Store公開（$5）
+
+#### Phase 3（夢）
+- iOS/Androidネイティブ化（誰かと組めれば）
+
+---
+
+### 9-8. 次にやる候補（ゆいとの選択肢）
+
+1. **メッセージ履歴機能の実装**（チャット風UI完成。ゆいとが気にしてた「メッセージみたいにならない」問題の解決）
+2. **3単語ピックアップ機能の追加**
+3. **デプロイ**（誰でもアクセス可能に）
+4. **README.md整備**（就活素材として）
+5. **録画素材作り**（顔出しなし、TikTok/Reels用）
+6. **LEARNING.md追記**（package.json / git操作 など）
+
+---
+
+### 9-9. プロジェクトファイル構成
+
+```
+~/projects/phrase/
+├── index.html        ← 冒頭に「<!DOCTYPE html>S」の余計な「S」あり
+├── server.js
+├── .env              ← GitHub除外（.gitignoreで）
+├── .gitignore
+├── package.json
+├── package-lock.json
+├── node_modules/
+├── README.md
+└── LEARNING.md       ← このファイル
+```
+
+#### よく使うパス
+- WSL: `~/projects/phrase/`
+- Windowsダウンロード: `/mnt/c/Users/yuito/Downloads/`
+- GitHub: `https://github.com/yuito-dev/phrase`
+
+---
+
+### 9-10. セキュリティルール（厳守）
+
+- **APIキーは絶対にチャット・スクショに出さない**
+- `cat .env` をターミナルで実行しない
+- 確認したい時は `head -c 30 ~/projects/phrase/.env` で先頭だけ
+- 流出したら即Anthropic ConsoleでRevoke→新キー発行
+- `.env`は`.gitignore`で必ず除外
+
+---
+
+### 9-11. 就活との関係
+
+GitHubポートフォリオ・動画発信・Claude Code経験・ピボット経験・
+**セキュリティ事故対応経験**を強みにする方向。
+
+語れるストーリー例：
+> 「英語学習が続かなかった経験から、AIを使った日常侵食型の英語学習サービスphraseを開発しました。Web版MVPを完成させ、Anthropic Claude APIで翻訳機能を実装。開発中にAPIキーをチャット経由で流出させる事故を起こしましたが、即座にRevokeして新キーで復旧する経験を積みました。Claude Codeに頼り切らず、生成されたコードを1行ずつ理解し、学習記録もMarkdownで公開しています。」
+
+---
+
+### 9-12. 引継ぎプロンプト読み込み完了の合図
+
+新チャットのClaudeへ：
+
+このセクション（第9章）を全部読んだら、以下のように返答してください：
+
+```
+了解、引継ぎ完了。phraseプロジェクトの全文脈把握しました。
+ゆいとの個性・つまずきパターン・過去の事件・現状・構想すべて理解。
+
+次は何やる？候補：
+1. メッセージ履歴機能の実装
+2. 3単語ピックアップ機能
+3. デプロイ
+4. README.md整備
+5. 録画素材作り
+6. LEARNING.md追記
+
+それとも別のこと？
+```
+
+これで文脈は完全復元される。
+あとは「【トーン・スタイル】砕けた口調、ヨイショ禁止」のルールで進めればOK。
 
 ---
 
